@@ -1,0 +1,1 @@
+USER_AGENT = "DankFlairBot v0.1"

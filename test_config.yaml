@@ -1,0 +1,47 @@
+---
+# Make the bans known to all.
+
+type: user
+
+banned: true
+
+flair:
+  user_text: BANNED
+  user_class: .red
+
+---
+
+# Give noobs a flair
+
+type: user
+
+total_link_score: 
+  value: 100
+  condition: less
+
+flair:
+  user_text: Noob
+  user_class: .noob
+
+---
+
+# A weird rule to show flexability.
+# This rule bans a user if they have an active post
+# and their comment score becomes less than 0.
+
+type: submission
+
+total_comment_score:
+  value: 0
+  condition: less
+
+flair: 
+  submission_text: "User was banned because of this post"
+  submission_class: .banned_mkay
+
+ban:
+  value: true
+  length: 5
+
+---
+

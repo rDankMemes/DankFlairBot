@@ -1,0 +1,66 @@
+
+Inputs <-
+
+type: submission | user
+
+priority: (integer)
+
+maximum_all_rank:
+	range: [(integer), (integer)]
+	value: (integer)
+	condition: less | less_equal | equal | greater_equal | greater | not_equal
+	occurrences: (integer)	# occurance only works on user types. Ignored otherwise.
+	
+maximum_sub_rank:
+	range: [(integer), (integer)]
+	value: (integer)
+	condition: less | less_equal | equal | greater_equal | greater | not_equal
+	occurrences: (integer)
+	
+total_link_score:
+	range: [(integer), (integer)]
+	value: (integer)
+	condition: less | less_equal | equal | greater_equal | greater | not_equal
+	occurrences: (integer)
+	
+link_score:
+	range: [(integer), (integer)]
+	value: (integer)
+	condition: less | less_equal | equal | greater_equal | greater | not_equal
+	occurrences: (integer)
+	
+total_comment_score:
+	range: [(integer), (integer)]
+	value: (integer)
+	condition: less | less_equal | equal | greater_equal | greater | not_equal
+	occurrences: (integer)	
+
+comment_score:
+	range: [(integer), (integer)]
+	value: (integer)
+	condition: less | less_equal | equal | greater_equal | greater | not_equal
+	occurrences: (integer)	
+	
+banned: 
+	value: true | false
+	sub: (string)
+	
+moderator: 
+	value: true | false
+	sub: (string)
+
+
+Outputs ->
+
+ban:
+	value: true | false
+	length: (integer)
+	
+user_flair:
+	unmanaged: true | false
+	user_text: (string)
+	user_class: (string)
+	submission_class: (string)
+	submission_text: (string)
+
+

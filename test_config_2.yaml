@@ -1,0 +1,14 @@
+---
+# Make the bans known to all.
+
+type: submission
+
+maximum_sub_rank:
+    value: 5
+    condition: greater
+
+flair:
+  submission_text: Top 5!
+  submission_class: .toppy_boy
+
+---
