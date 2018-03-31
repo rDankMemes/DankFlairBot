@@ -8,6 +8,8 @@ DFB uses synax similar to Automoderator, which is based off YAML. The concept is
 
 Currently, only a small amount of inputs and outputs are supported, but more inputs and outputs are being added constantly.
 
+#### Reddit Configuration
+
 The configuration for a bot is placed at the url:
 
     https://www.reddit.com/r/[subreddit]/wiki/dfb-config
@@ -57,4 +59,52 @@ flair:
    user_class: noob
 ```
 
+#### Server Configuration
 
+Configuring the server requires creating a config.yml file. The contents of this file are demonstrated below:
+
+```yaml
+---
+
+# Mod accounts are capable of moderator actions.
+# Any action that needs mod perms will be done with these accounts.
+type: mod
+
+username: [reddit_username]
+
+password: [reddit_password]
+
+client-id: [api_client_id]
+
+client-secret: [api_client_secret]
+
+
+---
+
+# Workers do not have moderator abilites. 
+# These are only for random data collection purposes
+type: worker
+
+username: [reddit_username]
+
+password: [reddit_password]
+
+client-id: [api_client_id]
+
+client-secret: [api_client_secret]
+
+---
+
+# You can add as many workers or mods as you want.
+# As you add workers and mods, the b
+type: worker
+
+username: [reddit_username]
+
+password: [reddit_password]
+
+client-id: [api_client_id]
+
+client-secret: [api_client_secret]
+
+```
