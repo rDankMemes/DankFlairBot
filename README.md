@@ -96,7 +96,7 @@ client-secret: [api_client_secret]
 ---
 
 # You can add as many workers or mods as you want.
-# As you add workers and mods, the b
+# As you add workers and mods, the bot will experience less cooldown times and respond faster
 type: worker
 
 username: [reddit_username]
