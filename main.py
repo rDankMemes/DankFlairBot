@@ -21,7 +21,7 @@ def main():
 
     RedditManager.login_threads_from_file("config.yml")
 
-    ThreadedServices.setup_threads("BotParty")
+    ThreadedServices.setup_threads("CongratsLikeImFive")
 
     #    RedditManager.get_bans("BotParty")
 
