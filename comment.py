@@ -1,6 +1,7 @@
 import sqlite3
 from databasable import databasable
 import RedditManagerUtils
+from DisplayManager import DisplayManager
 
 class comment(databasable):
 
@@ -90,10 +91,10 @@ class comment(databasable):
                     query
                 )
 
-                print("Updated " + self.comment_id)
+                #print("Updated " + self.comment_id)
 
                 break
 
             except sqlite3.OperationalError:
 
-                print("Database error. Trying again...")
+                DisplayManager.displayStatusString("Database error. Trying again...")

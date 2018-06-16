@@ -3,13 +3,41 @@ from RedditManagerUtils import RedditManager
 from DatabaseManager import DatabaseManager
 import RulesManager
 from user import user
+import Constants
 import time
 import sys
 import datetime
 import prawcore
+from DisplayManager import DisplayManager
+from ruamel.yaml import YAML
+
+global active_comment_duration
+global active_post_duration
+
+def read_setting_from_file(filename):
+
+    global active_comment_duration
+    global active_post_duration
+
+    settings_file = open(filename)
+
+    file_string = settings_file.read()
+
+    yaml = YAML(typ='safe')
+
+    output = list(yaml.load_all(file_string))
+
+    active_post_duration = output[0]["active_post_duration"]
+
+    active_comment_duration = output[0]["active_comment_duration"]
+
+    print(output)
 
 
 def setup_threads(subreddit):
+
+    global active_comment_duration
+    global active_post_duration
 
     mod_monitor = ModeratorsMonitorThread(subreddit)
 
@@ -35,6 +63,10 @@ def setup_threads(subreddit):
 
     ban_maint = BanMaintenanceThread(subreddit)
 
+    message_monitor = MessageMonitorThread()
+
+    display_manager = DisplayManagerThread(subreddit)
+
     mod_monitor.start()
 
     rule_maint.start()
@@ -57,6 +89,30 @@ def setup_threads(subreddit):
 
     ban_maint.start()
 
+    message_monitor.start()
+
+    display_manager.start()
+
+class DisplayManagerThread(threading.Thread):
+
+    def __init__(self, subreddit):
+        threading.Thread.__init__(self)
+
+        DisplayManager.addSubreddit(subreddit)
+
+
+
+        pass
+
+    def run(self):
+
+        while True:
+
+            RedditManager.get_rate_limits()
+
+            DisplayManager.update()
+
+            time.sleep(0.1)
 
 class MessageMonitorThread(threading.Thread):
 
@@ -66,9 +122,39 @@ class MessageMonitorThread(threading.Thread):
 
     def run(self):
 
+        while True:
 
+            try:
 
-        pass
+                messages = RedditManager.get_messages()
+
+                for message in messages:
+
+                    if message['subject'].startswith("invitation to moderate"):
+
+                        # POW!
+                        if not message['subreddit'] == 'None':
+                            RedditManager.send_message(subject=Constants.ONBOARDING_SUBJECT,
+                                                       content=Constants.ONBOARDING_MESSAGE,
+                                                       recipient="r/{sub}".format(sub=message['subreddit']))
+
+                            try:
+
+                                RedditManager.accept_mod_invite(message['subreddit'])
+
+                            except:
+                                pass
+
+                        RedditManager.mark_message_read(message['id'])
+
+                    if message['author'] == "ELFAHBEHT_SOOP":
+
+                        RedditManager.mark_message_read(message['id'])
+
+                pass
+            except:
+                pass
+
 
 class ModeratorsMonitorThread(threading.Thread):
 
@@ -79,15 +165,17 @@ class ModeratorsMonitorThread(threading.Thread):
 
     def run(self):
 
-        userlist = RedditManager.get_subreddit_moderators(self.subreddit)
+        while True:
 
-        DatabaseManager.update_moderators(userlist, self.subreddit)
+            userlist = RedditManager.get_subreddit_moderators(self.subreddit)
 
-        for mod in userlist:
-            DatabaseManager.ensure_user_exists(mod.username, self.subreddit)
+            DatabaseManager.update_moderators(userlist, self.subreddit)
 
-        #Sleep for 10 minutes
-        time.sleep(10 * 60)
+            for mod in userlist:
+                DatabaseManager.ensure_user_exists(mod.username, self.subreddit)
+
+            #Sleep for 10 minutes
+            time.sleep(10 * 60)
 
 
 class FlairMantenanceThread(threading.Thread):
@@ -99,12 +187,14 @@ class FlairMantenanceThread(threading.Thread):
 
     def run(self):
 
-        flair_list = RedditManager.get_flairs(subreddit=self.subreddit)
+        while True:
 
-        DatabaseManager.update_flairs(flair_list)
+            flair_list = RedditManager.get_flairs(subreddit=self.subreddit)
 
-        #Sleep for 10 minutes
-        time.sleep(10 * 60)
+            DatabaseManager.update_flairs(flair_list)
+
+            #Sleep for 10 minutes
+            time.sleep(10 * 60)
 
 class HotMonitorThread(threading.Thread):
 
@@ -179,7 +269,7 @@ class RuleMaintenanceThread(threading.Thread):
                 pass
 
             except prawcore.exceptions.Forbidden as e:
-                print("Need to be mod!")
+                DisplayManager.displayStatusString("Need to be mod!")
                 time.sleep(500)
 
 class UserStreamThread(threading.Thread):
@@ -189,7 +279,7 @@ class UserStreamThread(threading.Thread):
 
     def run(self):
 
-        print("User Stream Thread Started")
+        #print("User Stream Thread Started")
 
         while True:
 
@@ -210,7 +300,7 @@ class UserStreamThread(threading.Thread):
 
             except:
 
-                print("User Stream Thread Exception: " + str(sys.exc_info()[0]))
+                DisplayManager.displayStatusString("User Stream Thread Exception: " + str(sys.exc_info()[0]))
                 pass
 
 class UserMaintenanceThread(threading.Thread):
@@ -220,7 +310,7 @@ class UserMaintenanceThread(threading.Thread):
 
     def run(self):
 
-        print("User Maintenance Thread Started")
+        #print("User Maintenance Thread Started")
 
         while True:
 
@@ -239,7 +329,7 @@ class UserMaintenanceThread(threading.Thread):
 
             except:
 
-                print("User Maintenance Thread Exception: " + str(sys.exc_info()[0]))
+                DisplayManager.displayStatusString("User Maintenance Thread Exception: " + str(sys.exc_info()[0]))
 
                 pass
 
@@ -252,7 +342,7 @@ class PostStreamThread(threading.Thread):
 
     def run(self):
 
-        print("Post Stream Thread Started")
+        #("Post Stream Thread Started")
 
         if self.sub is None:
             return
@@ -278,7 +368,7 @@ class CommentStreamThread(threading.Thread):
 
     def run(self):
 
-        print("Comment Stream Thread Started")
+        #DisplayManager.displayStatusString("Comment Stream Thread Started")
 
         if self.sub is None:
             return
@@ -303,7 +393,7 @@ class PostMaintenanceThread(threading.Thread):
 
     def run(self):
 
-        print("Post Maintenance Thread Started")
+        #print("Post Maintenance Thread Started")
 
         DAY_HALF_SECONDS = 60 * 60 * 24 * 1.5
 
@@ -314,6 +404,14 @@ class PostMaintenanceThread(threading.Thread):
                 current_time = datetime.datetime.utcnow().timestamp()
 
                 post_list = DatabaseManager.get_all_posts(dateLimit=current_time - DAY_HALF_SECONDS)
+
+                DisplayManager.update_lock()
+
+                DisplayManager.update_active_posts(len(post_list))
+
+                DisplayManager.update_cur_post(0)
+
+                DisplayManager.update_unlock()
 
                 post_sub_list = []
 
@@ -333,11 +431,13 @@ class PostMaintenanceThread(threading.Thread):
 
                     post_sub_list.append(post_list[count])
 
+                    DisplayManager.update_cur_post(count)
+
                     count += 1
 
             except:
 
-                print("Post Main Thread Exception: " + str(sys.exc_info()[0]))
+                DisplayManager.displayStatusString("Post Main Thread Exception: " + str(sys.exc_info()[0]))
 
                 pass
 
@@ -349,7 +449,7 @@ class CommentMaintenanceThread(threading.Thread):
 
     def run(self):
 
-        print("Comment Maintenance Thread Started")
+        #print("Comment Maintenance Thread Started")
 
         DAY_HALF_SECONDS = 60 * 60 * 24 * 1.5
 
@@ -360,6 +460,14 @@ class CommentMaintenanceThread(threading.Thread):
                 current_time = datetime.datetime.utcnow().timestamp()
 
                 comment_list = DatabaseManager.get_all_comments(dateLimit=current_time - DAY_HALF_SECONDS)
+
+                DisplayManager.update_lock()
+
+                DisplayManager.update_active_comments(len(comment_list))
+
+                DisplayManager.update_cur_comment(0)
+
+                DisplayManager.update_unlock()
 
                 comment_sub_list = []
 
@@ -379,9 +487,11 @@ class CommentMaintenanceThread(threading.Thread):
 
                     count += 1
 
+                    DisplayManager.update_cur_comment(count)
+
             except:
 
-                print("Comment Main Thread Exception: " + str(sys.exc_info()[0]))
+                DisplayManager.displayStatusString("Comment Main Thread Exception: " + str(sys.exc_info()[0]))
 
                 pass
 

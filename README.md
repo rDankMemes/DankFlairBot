@@ -18,7 +18,7 @@ Here is a simple example of a configuration:
 
 
 ```yaml
----
+-------
 
 # Show moderators
 
@@ -61,13 +61,30 @@ flair:
 
 #### Server Configuration
 
-Configuring the server requires creating a config.yml file. The contents of this file are demonstrated below:
+Configuring the server requires creating a config.yml file and a settings.yml file. The contents of these files are demonstrated below:
 
 ```yaml
 ---
 
+# The head account is the account that will be used for external facing
+# activities. These activities include anything that needs to put a name
+# to the bot, like messaging moderators, messaging users, making posts.
+
+type: head
+
+username: [reddit_username]
+
+password: [reddit_password]
+
+client-id: [api_client_id]
+
+client-secret: [api_client_secret]
+
+---
+
 # Mod accounts are capable of moderator actions.
 # Any action that needs mod perms will be done with these accounts.
+# The "head" is also a mod account.
 type: mod
 
 username: [reddit_username]
@@ -106,5 +123,19 @@ password: [reddit_password]
 client-id: [api_client_id]
 
 client-secret: [api_client_secret]
+
+```
+
+```yaml
+
+# Active comment duration is the amount of time a comment should be
+# actively updated in seconds. Recommended amount of time is roughly
+# 1.5 days. This also depends on subreddit traffic levels.
+active_comment_duration: 129600
+
+# Active submission duration is the same as active comment duration,
+# but for posts. This duration is also a default of 1.5 days.
+active_post_duration: 129600
+
 
 ```

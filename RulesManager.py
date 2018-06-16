@@ -50,7 +50,7 @@ class RulesManager():
     @staticmethod
     def _parse_rules(raw_dict, subreddit):
 
-        print(raw_dict)
+        #print(raw_dict)
 
         ruleset = []
 
@@ -85,7 +85,7 @@ class RulesManager():
 
                     inputs.append(new_input)
 
-                    print(input_class)
+                    #print(input_class)
 
                 output_class = RulesManager._output_name_to_type(rule)
 

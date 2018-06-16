@@ -3,6 +3,8 @@ import Constants
 
 from DatabaseManager import DatabaseManager
 
+from DisplayManager import DisplayManager
+
 from user import user
 
 from post import post
@@ -26,6 +28,9 @@ class RedditManager():
 
     # List of praw instances that do have mod privileges
     _mod_reddits = []
+
+    # A reddit instance for the head reddit instance
+    _head_reddit = None
 
     mod_index = 0
 
@@ -63,24 +68,39 @@ class RedditManager():
                         username=login['username'],
                         password=login['password'])
 
+
             if login['type'] == 'mod':
+                RedditManager._mod_reddits.append(new_reddit)
+
+                #If there are no "heads" in the config, make the first mod the head.
+                if RedditManager._head_reddit == None:
+                    RedditManager._head_reddit = new_reddit
+
+
+            elif login['type'] == 'head':
+                RedditManager._head_reddit = new_reddit
                 RedditManager._mod_reddits.append(new_reddit)
             else:
                 RedditManager._worker_reddits.append(new_reddit)
 
-        print(output)
+        #print(output)
 
     @staticmethod
-    def get_connection(moderator=False):
+    def get_connection(moderator=False, head=False):
 
         while RedditManager._thread_lock:
             time.sleep(0)
 
+        #TODO: This isn't completely thread safe, but it's good enough for now.
         RedditManager._thread_lock = True
 
         returned_connection = None
 
-        if moderator:
+        if head:
+
+            returned_connection = RedditManager._head_reddit
+
+        elif moderator:
             returned_connection = RedditManager._mod_reddits[RedditManager.mod_index]
 
             RedditManager.mod_index += 1
@@ -117,6 +137,21 @@ class RedditManager():
     @staticmethod
     def _add_mod(reddit):
         RedditManager._mod_reddits.append(reddit)
+
+    @staticmethod
+    def get_rate_limits():
+
+        limits = []
+
+        for worker in RedditManager._worker_reddits:
+            limits.append(worker.auth.limits)
+
+        for mod in RedditManager._mod_reddits:
+            limits.append(mod.auth.limits)
+
+        DisplayManager.displayStatusString(limits)
+
+        return limits
 
     @staticmethod
     def login_thread(username, password, client_id, client_secret):
@@ -318,7 +353,7 @@ class RedditManager():
 
         subreddit = r.subreddit(sub)
 
-        print(subreddit)
+        #print(subreddit)
 
         user_list = []
 
@@ -464,6 +499,18 @@ class RedditManager():
         DatabaseManager.update_flairs(flair_struct_list)
 
     @staticmethod
+    def send_message(subject: str, content: str, recipient: str, speaking_as: str = None) -> object:
+
+        r = RedditManager.get_connection(head=True)
+
+        if speaking_as is None:
+            r.redditor(recipient).message(subject, content)
+
+        else:
+            r.redditor(recipient).message(subject, content, speaking_as)
+
+
+    @staticmethod
     def _usertouser(reddit_user, subreddit=None):
 
         new_user = None
@@ -481,17 +528,37 @@ class RedditManager():
     @staticmethod
     def get_messages():
 
-        conn = RedditManager.get_connection(moderator=True)
+        conn = RedditManager.get_connection(head=True)
 
         message_list = []
 
         for message in conn.inbox.unread():
             message_list.append(dict([('author', str(message.author)),
                                       ('subject', message.subject),
-                                      ('body',message.body)]))
+                                      ('body',message.body),
+                                      ('id', message.id),
+                                      ('subreddit', str(message.subreddit))]))
 
 
         return message_list
+
+    @staticmethod
+    def mark_message_read(id):
+
+        conn = RedditManager.get_connection(head=True)
+
+        message_list = []
+
+        msg = conn.inbox.message(id)
+
+        msg.mark_read()
+
+    @staticmethod
+    def accept_mod_invite(subreddit):
+
+        conn = RedditManager.get_connection(head=True)
+
+        conn.subreddit(subreddit).mod.accept_invite()
 
     @staticmethod
     def get_bans(subreddit):

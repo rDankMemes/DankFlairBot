@@ -5,6 +5,8 @@ import RedditManagerUtils
 
 import RulesManager
 
+from DisplayManager import DisplayManager
+
 def less(value_one, value_two):
 
     return value_one < value_two
@@ -371,7 +373,7 @@ class flair(Output):
                 self.submission_class = dict['submission_class']
 
         except Exception as e:
-            print(e)
+            DisplayManager.displayStatusString(e)
 
     def perform_action(self, eval_post=None, eval_user=None):
 

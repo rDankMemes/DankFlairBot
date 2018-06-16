@@ -4,6 +4,7 @@ import sys
 from comment import comment
 from post import post
 from user import user
+from DisplayManager import DisplayManager
 
 
 class DatabaseManager():
@@ -420,7 +421,7 @@ class DatabaseManager():
     def ensure_user_exists(username, subreddit):
 
         if not DatabaseManager.userExists(username, subreddit):
-            print(username + " not in database for " + subreddit + "!")
+            #print(username + " not in database for " + subreddit + "!")
 
             # new_user = RedditManager.fetchUserMeta(cur_post.username, cur_post.subreddit)
 
@@ -663,7 +664,7 @@ class DatabaseManager():
 
             except Exception as e:
 
-                print("Database error. Trying again..." + str(e))
+                DisplayManager.displayStatusString("Database error. Trying again..." + str(e))
 
     @staticmethod
     def _execute_script_robust(connection, query):
@@ -679,7 +680,7 @@ class DatabaseManager():
                 cursor = connection.cursor()
 
                 for q in q_split:
-                    print(q)
+                    #print(q)
                     cursor.execute(q)
 
 
@@ -690,5 +691,6 @@ class DatabaseManager():
                 try:
                     cursor.execute("rollback")
                 except:
-                    print("rollback unnecessary")
-                print("Database error. Trying again..." + str(e))
+                    pass
+                    #print("rollback unnecessary")
+                DisplayManager.displayStatusString("Database error. Trying again..." + str(e))

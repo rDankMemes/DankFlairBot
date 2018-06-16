@@ -3,6 +3,8 @@ from databasable import databasable
 from InfoNotFetchedError import InfoNotFetchedError
 #from MissingCursorError import MissingCursorError
 
+from DisplayManager import DisplayManager
+
 import RedditManagerUtils
 import time
 
@@ -81,14 +83,14 @@ class user(databasable):
                     query
                 )
 
-                print("Updated user " + self.username)
+                #print("Updated user " + self.username)
 
                 # Break the loop because it works.
                 break
 
             except sqlite3.OperationalError:
 
-                print("Database error. Trying again...")
+                DisplayManager.displayStatusString("Database error. Trying again...")
 
     def __str__(self):
 
