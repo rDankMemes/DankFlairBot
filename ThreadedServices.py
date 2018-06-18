@@ -51,15 +51,15 @@ def setup_threads(subreddit):
 
     RedditManager.fetchCommentMetaRecent(subreddit)
 
-    post_maint = PostMaintenanceThread()
+    #post_maint = PostMaintenanceThread()
 
     post_stream = PostStreamThread(subreddit)
 
     comment_stream = CommentStreamThread(subreddit)
 
-    comment_maint = CommentMaintenanceThread()
+    #comment_maint = CommentMaintenanceThread()
 
-    flair_maint = FlairMantenanceThread(subreddit)
+    flair_maint = FlairMaintenanceThread(subreddit)
 
     ban_maint = BanMaintenanceThread(subreddit)
 
@@ -73,7 +73,7 @@ def setup_threads(subreddit):
 
     hot_monitor.start()
 
-    post_maint.start()
+    #post_maint.start()
 
     user_stream.start()
 
@@ -83,7 +83,7 @@ def setup_threads(subreddit):
 
     comment_stream.start()
 
-    comment_maint.start()
+    #comment_maint.start()
 
     flair_maint.start()
 
@@ -93,6 +93,10 @@ def setup_threads(subreddit):
 
     display_manager.start()
 
+    postcomment_maint = PostCommentMaintenanceThread()
+
+    postcomment_maint.start()
+
 class DisplayManagerThread(threading.Thread):
 
     def __init__(self, subreddit):
@@ -100,7 +104,7 @@ class DisplayManagerThread(threading.Thread):
 
         DisplayManager.addSubreddit(subreddit)
 
-
+        self.name = "Display Manager Thread"
 
         pass
 
@@ -118,7 +122,8 @@ class MessageMonitorThread(threading.Thread):
 
     def __init__(self):
         threading.Thread.__init__(self)
-        pass
+
+        self.name = "Message Monitor Thread"
 
     def run(self):
 
@@ -163,6 +168,8 @@ class ModeratorsMonitorThread(threading.Thread):
 
         self.subreddit = subreddit
 
+        self.name = "Moderators Monitor Thread"
+
     def run(self):
 
         while True:
@@ -174,16 +181,20 @@ class ModeratorsMonitorThread(threading.Thread):
             for mod in userlist:
                 DatabaseManager.ensure_user_exists(mod.username, self.subreddit)
 
+            DisplayManager.update_num_mods(self.subreddit, len(userlist))
+
             #Sleep for 10 minutes
             time.sleep(10 * 60)
 
 
-class FlairMantenanceThread(threading.Thread):
+class FlairMaintenanceThread(threading.Thread):
 
     def __init__(self, subreddit):
         threading.Thread.__init__(self)
 
         self.subreddit = subreddit
+
+        self.name = "Flair Maintenance Thread"
 
     def run(self):
 
@@ -191,10 +202,12 @@ class FlairMantenanceThread(threading.Thread):
 
             flair_list = RedditManager.get_flairs(subreddit=self.subreddit)
 
+            DisplayManager.update_num_flairs(self.subreddit, len(flair_list))
+
             DatabaseManager.update_flairs(flair_list)
 
-            #Sleep for 10 minutes
-            time.sleep(10 * 60)
+            #Sleep for 1 minute
+            time.sleep(60)
 
 class HotMonitorThread(threading.Thread):
 
@@ -202,6 +215,8 @@ class HotMonitorThread(threading.Thread):
         threading.Thread.__init__(self)
 
         self.subreddit = subreddit
+
+        self.name = "Hot Monitor Thread"
 
     def run(self):
 
@@ -229,7 +244,7 @@ class HotMonitorThread(threading.Thread):
                 print(rank)
 
             #Sleep for 5 minutes before checking again.
-            time.sleep(10)
+            time.sleep(MINUTE_DELAY * 5)
 
 class RuleMaintenanceThread(threading.Thread):
 
@@ -244,6 +259,8 @@ class RuleMaintenanceThread(threading.Thread):
         threading.Thread.__init__(self)
 
         self.subreddit = subreddit
+
+        self.name = "Rule Maintenance Thread"
 
     def run(self):
 
@@ -277,6 +294,8 @@ class UserStreamThread(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
 
+        self.name = "User Stream Thread"
+
     def run(self):
 
         #print("User Stream Thread Started")
@@ -298,6 +317,8 @@ class UserStreamThread(threading.Thread):
                     DatabaseManager.ensure_user_exists(cur_comment.username, cur_comment.subreddit)
 
 
+
+
             except:
 
                 DisplayManager.displayStatusString("User Stream Thread Exception: " + str(sys.exc_info()[0]))
@@ -307,6 +328,8 @@ class UserMaintenanceThread(threading.Thread):
 
     def __init__(self):
         threading.Thread.__init__(self)
+
+        self.name = "User Maintenance Thread"
 
     def run(self):
 
@@ -340,6 +363,8 @@ class PostStreamThread(threading.Thread):
 
         self.sub = subreddit
 
+        self.name = "Post Stream Thread"
+
     def run(self):
 
         #("Post Stream Thread Started")
@@ -366,6 +391,8 @@ class CommentStreamThread(threading.Thread):
 
         self.sub = subreddit
 
+        self.name = "Comment Stream Thread"
+
     def run(self):
 
         #DisplayManager.displayStatusString("Comment Stream Thread Started")
@@ -381,6 +408,10 @@ class CommentStreamThread(threading.Thread):
             for post_meta in metaList:
                 DatabaseManager.ensure_user_exists(post_meta.username, post_meta.subreddit)
 
+            num_users = DatabaseManager.get_count_all_users(self.sub)
+
+            DisplayManager.update_num_users(self.sub, num_users)
+
             time.sleep(10)
 
             pass
@@ -390,6 +421,7 @@ class PostMaintenanceThread(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
 
+        self.name = "Post Maintenance Thread"
 
     def run(self):
 
@@ -446,6 +478,7 @@ class CommentMaintenanceThread(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
 
+        self.name = "Comment Maintenance Thread"
 
     def run(self):
 
@@ -495,6 +528,134 @@ class CommentMaintenanceThread(threading.Thread):
 
                 pass
 
+class PostCommentMaintenanceThread(threading.Thread):
+
+    def __init__(self):
+        threading.Thread.__init__(self)
+
+        self.name = "Post/Comment Maintenance Thread"
+
+    def run(self):
+
+        global active_comment_duration
+        global active_post_duration
+
+        #print("Comment Maintenance Thread Started")
+
+        DAY_HALF_SECONDS = 60 * 60 * 24 * 1.5
+
+        while True:
+
+            try:
+
+                # First, get the current time!
+
+                current_time = datetime.datetime.utcnow().timestamp()
+
+                # Then, get all the posts we have stored that have been posted in the last
+                # duration where we are updating posts. Default 1.5 days.
+                post_list = DatabaseManager.get_all_posts(dateLimit=current_time - active_post_duration)
+
+                # Get the comments as well.
+                comment_list = DatabaseManager.get_all_comments(dateLimit=current_time - active_comment_duration)
+
+                # Resetting the display to show the number of active posts.
+
+                # We have to lock the display from updating so we don't show weird info.
+                DisplayManager.update_lock()
+
+                # Update the number of active posts
+                DisplayManager.update_active_posts(len(post_list))
+
+                # Update the current post we are on to the 0th post.
+                DisplayManager.update_cur_post(0)
+
+                # Update the number of active comments.
+                DisplayManager.update_active_comments(len(comment_list))
+
+                # Update the current comment number.
+                DisplayManager.update_cur_comment(0)
+
+                # unlock the display now that we have finished updating.
+                DisplayManager.update_unlock()
+
+                post_sub_list = []
+
+                comment_sub_list = []
+
+                post_count = 0
+
+                comment_count_display = 0
+
+                while post_count < len(post_list):
+
+                    cur_post = post_list[post_count]
+
+                    post_comments = RedditManager.fetchAllPostComments(cur_post.post_id)
+
+                    cur_post.fetch()
+
+                    DatabaseManager.updateCommentList(post_comments)
+
+                    comment_count_display += len(post_comments)
+
+                    DisplayManager.update_cur_comment(comment_count_display)
+
+                    # Prune all of the comments we have just processed.
+                    for comment in post_comments:
+                        if comment in comment_list:
+                            comment_list.remove(comment)
+
+                    if post_count % 10 == 0:
+
+                        # Every 10 posts we process are commited to the database together.
+
+                        DatabaseManager.updatePostList(post_sub_list)
+
+
+                        post_sub_list = []
+
+                    #Add the current post to the post_sub_list.
+
+                    post_sub_list.append(post_list[post_count])
+
+                    post_count += 1
+
+                    # Update the display manager with the number of posts processed.
+                    DisplayManager.update_cur_post(post_count)
+
+                # Commit what's left.
+                DatabaseManager.updatePostList(post_sub_list)
+
+                comment_count = 0
+
+                while comment_count < len(comment_list):
+
+                    comment_list[comment_count].fetch()
+
+                    if comment_count % 10 == 0:
+
+                        DatabaseManager.updateCommentList(comment_sub_list)
+
+                        comment_sub_list = []
+
+                    comment_sub_list.append(comment_list[comment_count])
+
+                    comment_count += 1
+                    comment_count_display += 1
+
+                    DisplayManager.update_cur_comment(comment_count_display)
+
+                # Commit what's left.
+                DatabaseManager.updateCommentList(comment_sub_list)
+
+            except:
+
+                DisplayManager.displayStatusString("Comment Main Thread Exception: " + str(sys.exc_info()[0]))
+
+                pass
+
+
 class BanMaintenanceThread(threading.Thread):
 
 
@@ -503,6 +664,7 @@ class BanMaintenanceThread(threading.Thread):
 
         self.subreddit = subreddit
 
+        self.name = "Ban Maintenance Thread"
 
     def run(self):
         #TODO: change this by looking at changes in the modlog, and updating accordingly.

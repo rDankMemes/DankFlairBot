@@ -242,7 +242,7 @@ class DatabaseManager():
 
 
     @staticmethod
-    def get_all_comments(dateLimit = None):
+    def get_all_comments(dateLimit = None, subreddit = None):
 
         comment_list = []
 
@@ -250,9 +250,33 @@ class DatabaseManager():
 
         cursor = cur_connection.cursor()
 
-        result = []
+        main_query = """
+        SELECT
+                comments.comment_id,
+                comments.post_id,
+                comments.username,
+                comments.parent_comment,
+                comments.comment_karma,
+                comments.comment_date,
+                comments.subreddit
+          FROM comments
+        """
 
-        result = DatabaseManager._execute_robust(cursor, 'SELECT * FROM comments')
+        final_query = ""
+
+        if subreddit is None and dateLimit is None:
+            final_query = main_query
+        elif subreddit is not None and dateLimit is None:
+            final_query = main_query + """WHERE subreddit='{subreddit}'""".format(subreddit=subreddit)
+        elif subreddit is None and dateLimit is not None:
+            final_query = main_query + """WHERE comment_date > {dateLimit}""".format(dateLimit=str(dateLimit))
+        else:
+            final_query = main_query + """WHERE subreddit='{subreddit}'
+                                      and comment_date > {dateLimit}""".format(subreddit=subreddit, dateLimit=str(dateLimit))
+
+        result = DatabaseManager._execute_robust(cursor, final_query)
+
+#        result = DatabaseManager._execute_robust(cursor, 'SELECT * FROM comments')
 
         for row in result:
 
@@ -394,6 +418,22 @@ class DatabaseManager():
             user_list.append(new_user)
 
         return user_list
+
+    @staticmethod
+    def get_count_all_users(subreddit):
+        user_list = []
+
+        cur_connection = DatabaseManager.get_connection()
+
+        cursor = cur_connection.cursor()
+
+        query = """SELECT COUNT(*) FROM users WHERE users.subreddit = "{subreddit}";""".format(subreddit=subreddit)
+
+        result = DatabaseManager._execute_robust(cursor,
+                                        query)
+
+        return result[0][0]
+
 
     @staticmethod
     def get_user(username):

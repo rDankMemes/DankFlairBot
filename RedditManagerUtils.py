@@ -178,37 +178,32 @@ class RedditManager():
 
         reddit_comment = RedditManager.get_connection().comment(id=id)
 
-        comment_id = reddit_comment.id
-
-        post_id = reddit_comment.submission.id
-
-        if reddit_comment.author is None:
-            username = "[deleted]"
-        else:
-            username = reddit_comment.author.name
-
-        parent_comment = None
-
-        # We need to split here, because the incoming id uses the fullname syntax
-        if reddit_comment.parent_id.split('_')[0] == 't1':
-            parent_comment = reddit_comment.parent_id.split('_')[1]
-
-        comment_karma = reddit_comment.score
-
-        comment_date = reddit_comment.created_utc
-
-        subreddit = str(reddit_comment.subreddit)
-
-        new_comment = comment(comment_id=comment_id, post_id=post_id, username=username,
-                              parent_comment=parent_comment, comment_karma=comment_karma,
-                              comment_date=comment_date, subreddit=subreddit)
-
+        new_comment = RedditManager._commenttocomment(reddit_comment)
 
         return new_comment
 
 
 
         pass
+
+    @staticmethod
+    def fetchAllPostComments(id):
+
+        reddit_post = RedditManager.get_connection().submission(id=id)
+
+        reddit_post.comment_sort = 'old'
+
+        comments = reddit_post.comments.list()
+
+        final_list = []
+
+        for comment in comments:
+            if not type(comment).__name__ == "MoreComments":
+                final_list.append(RedditManager._commenttocomment(comment))
+            else:
+                pass
+
+        return final_list
 
     @staticmethod
     def fetchUserMeta(username, subreddit):
@@ -524,6 +519,35 @@ class RedditManager():
             pass
 
         return new_user
+
+    @staticmethod
+    def _commenttocomment(reddit_comment):
+
+        comment_id = reddit_comment.id
+
+        post_id = reddit_comment.submission.id
+
+        if reddit_comment.author is None:
+            username = "[deleted]"
+        else:
+            username = reddit_comment.author.name
+
+        parent_comment = None
+
+        # We need to split here, because the incoming id uses the fullname syntax
+        if reddit_comment.parent_id.split('_')[0] == 't1':
+            parent_comment = reddit_comment.parent_id.split('_')[1]
+
+        comment_karma = reddit_comment.score
+
+        comment_date = reddit_comment.created_utc
+
+        subreddit = str(reddit_comment.subreddit)
+
+        return comment(comment_id=comment_id, post_id=post_id, username=username,
+                              parent_comment=parent_comment, comment_karma=comment_karma,
+                              comment_date=comment_date, subreddit=subreddit)
+
 
     @staticmethod
     def get_messages():

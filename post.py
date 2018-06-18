@@ -19,6 +19,10 @@ class post(databasable):
         self.max_sub_rank = max_sub_rank
         self.max_all_rank = max_all_rank
 
+    def __eq__(self, other):
+
+        return self.post_id == other.post_id
+
     def fetchall(self):
 
 
@@ -37,10 +41,11 @@ class post(databasable):
         self.post_karma = post.post_karma
         self.post_date = post.post_date
 
-
-
         pass
 
+    def get_comments(self):
+
+        pass
 
     def update(self, cursor):
 

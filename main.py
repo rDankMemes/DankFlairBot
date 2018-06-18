@@ -41,7 +41,7 @@ def main():
 #
 # """, recipient="ELFAHBEHT_SOOP")
 
-#    ThreadedServices.setup_threads("BotParty")
+    #ThreadedServices.setup_threads("BotParty")
 
     ThreadedServices.setup_threads("CongratsLikeImFive")
 

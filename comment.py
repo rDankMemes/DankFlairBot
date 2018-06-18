@@ -18,6 +18,10 @@ class comment(databasable):
         self.comment_date = comment_date
         self.subreddit = subreddit
 
+    def __eq__(self, other):
+
+        return self.comment_id == other.comment_id
+
     def fetch(self):
         # TODO: update the current values of this comment
 
