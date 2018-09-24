@@ -29,6 +29,8 @@ class RulesManager():
 
     __flair_lock = False
 
+    __current_eval_count = 0
+
     # def __init__(self, subreddit, page):
     #
     #     self.subreddit = subreddit
@@ -119,6 +121,11 @@ class RulesManager():
 
         active_rulesets.evaluate_and_action(eval_post=eval_post, eval_user=eval_user)
 
+        RulesManager.__current_eval_count += 1
+
+        if RulesManager.__current_eval_count % 100 == 0:
+            RulesManager.commit_pending_batch_commands()
+
         # for ruleset in active_rulesets:
         #     if ruleset.type == 'submission' and ruleset.evaluate(eval_post=eval_post) and eval_post is not None:
         #             ruleset.perform_action(eval_post=eval_post)
@@ -148,7 +155,11 @@ class RulesManager():
 
         RulesManager.__flair_lock = True
 
+        print("Commiting pending batch commands...")
+
         RedditManagerUtils.RedditManager.give_user_flair_list(RulesManager.__batch_flair)
+
+        RulesManager.__batch_flair.clear()
 
         RulesManager.__flair_lock = False
 
