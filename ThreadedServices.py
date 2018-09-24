@@ -593,9 +593,6 @@ class UserStreamThread(threading.Thread):
 
                     DatabaseManager.ensure_user_exists(cur_comment.username, cur_comment.subreddit)
 
-
-
-
             except:
 
                 DisplayManager.displayStatusString("User Stream Thread Exception: " + str(sys.exc_info()))
@@ -648,6 +645,7 @@ class UserMaintenanceThread(threading.Thread):
 
                 for cur_user in user_list:
                     if not cur_user.fetch():
+                        print("User {} doesn't exist. Removing...".format(cur_user.username))
                         DatabaseManager.remove_user(cur_user.username, cur_user.subreddit)
                         user_list.remove(cur_user)
 
