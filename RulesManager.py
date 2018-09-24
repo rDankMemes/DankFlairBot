@@ -47,6 +47,8 @@ class RulesManager():
 
         RulesManager.__subreddit_rulesets[subreddit] = new_ruleset
 
+        print("Fetched Ruleset {}".format(raw_content))
+
     @staticmethod
     def _parse_rules(raw_dict, subreddit):
 
