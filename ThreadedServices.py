@@ -527,6 +527,8 @@ class RuleMaintenanceThread(threading.Thread):
                     if self.stop:
                         return
 
+                    print("Evaluating {}...".format(a_user.username))
+
                     RulesManager.RulesManager.evaluate_and_action(subreddit=self.subreddit, eval_user=a_user)
 
                 RulesManager.RulesManager.commit_pending_batch_commands()
