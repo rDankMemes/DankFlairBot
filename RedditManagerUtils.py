@@ -476,16 +476,14 @@ class RedditManager():
             if flair_struct.flair_text is None:
                 continue
 
-            #if #not DatabaseManager.is_flair(flair_struct.subreddit,
-               #                             flair_struct.username,
-               #                             flair_struct.flair_text,
-               #                             flair_struct.flair_class):
-
-            # Just put the flairs unto the final mapping. Don't check if they exist already.
-            final_mapping[flair_struct.subreddit]\
-                .append(dict([('user', flair_struct.username),
-                                ('flair_text', flair_struct.flair_text),
-                                ('flair_css_class', flair_struct.flair_class)]))
+            if not DatabaseManager.is_flair(flair_struct.subreddit,
+                                            flair_struct.username,
+                                            flair_struct.flair_text,
+                                            flair_struct.flair_class):
+                final_mapping[flair_struct.subreddit]\
+                    .append(dict([('user', flair_struct.username),
+                                    ('flair_text', flair_struct.flair_text),
+                                    ('flair_css_class', flair_struct.flair_class)]))
 
         r = RedditManager.get_connection(moderator=True)
 
