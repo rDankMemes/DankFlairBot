@@ -149,7 +149,7 @@ class RedditManager():
         for mod in RedditManager._mod_reddits:
             limits.append(mod.auth.limits)
 
-        DisplayManager.displayStatusString(limits)
+        #DisplayManager.displayStatusString(limits)
 
         return limits
 
