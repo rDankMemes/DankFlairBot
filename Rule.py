@@ -397,6 +397,7 @@ class flair(Output):
 
             #RedditManager.RedditManager.give_user_flair(eval_user.username, self.context, self.user_text, self.user_class)
 
+            print("Giving flair {} to {}".format(self.user_text, eval_user.username))
 
             RulesManager.RulesManager.add_to_batch_flair(RedditManagerUtils.user_flair_struct(username=eval_user.username,
                                                                                               subreddit=self.context,
