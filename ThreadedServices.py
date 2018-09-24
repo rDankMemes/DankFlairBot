@@ -635,7 +635,7 @@ class UserMaintenanceThread(threading.Thread):
 
         loop_pause_time = 10
 
-        user_list = DatabaseManager.get_all_users()
+        user_list = DatabaseManager.get_all_users(limit = 1000)
 
         # First, remove every user that has a -1 for last update time.
 
