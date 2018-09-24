@@ -510,12 +510,23 @@ class RuleMaintenanceThread(threading.Thread):
 
                 posts = DatabaseManager.get_all_posts(subreddit=self.subreddit)
 
+                if self.stop:
+                    return
+
                 for a_post in posts:
+
+                    if self.stop:
+                        return
+
                     RulesManager.RulesManager.evaluate_and_action(subreddit=self.subreddit, eval_post=a_post)
 
                 users = DatabaseManager.get_all_users(subreddit=self.subreddit)
 
                 for a_user in users:
+
+                    if self.stop:
+                        return
+
                     RulesManager.RulesManager.evaluate_and_action(subreddit=self.subreddit, eval_user=a_user)
 
                 RulesManager.RulesManager.commit_pending_batch_commands()
