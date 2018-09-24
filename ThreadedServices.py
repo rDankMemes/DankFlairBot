@@ -31,7 +31,7 @@ def read_setting_from_file(filename):
 
     active_comment_duration = output[0]["active_comment_duration"]
 
-    print(output
+    print(output)
 
 threads_stopped = False
 
@@ -129,8 +129,7 @@ def setup_threads(subreddit):
 
     post_comment_maint.start()
 
-def traceback.print_exc()
- stop_threads():
+def stop_threads():
 
     global kill_lock
 

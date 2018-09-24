@@ -57,8 +57,6 @@ def main():
 
 #    ThreadedServices.setup_threads("OnionHate")
 
-    time.sleep(10)
-
     while not ThreadedServices.threads_stopped:
         time.sleep(0)
 
