@@ -10,6 +10,7 @@ import datetime
 import prawcore
 from DisplayManager import DisplayManager
 from ruamel.yaml import YAML
+import traceback
 
 global active_comment_duration
 global active_post_duration
