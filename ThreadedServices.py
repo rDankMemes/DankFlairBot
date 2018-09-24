@@ -635,6 +635,15 @@ class UserMaintenanceThread(threading.Thread):
 
         loop_pause_time = 10
 
+        user_list = DatabaseManager.get_all_users()
+
+        # First, remove every user that has a -1 for last update time.
+
+        for cur_user in user_list:
+            if cur_user.last_update == -1:
+                print("User {} doesn't exist. Removing...".format(cur_user.username))
+                DatabaseManager.remove_user(cur_user.username, cur_user.subreddit)
+
         while not self.stop:
 
             try:

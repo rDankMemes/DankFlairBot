@@ -18,7 +18,6 @@ class user(databasable):
         #Initialize the super class.
         super().__init__(cursor)
 
-
         self.username = username
         self.subreddit  = subreddit
         self.userid = user_id

@@ -415,6 +415,8 @@ class DatabaseManager():
         for row in result:
             new_user = user(row[0], row[1], row[2])
 
+            new_user.last_update = row[3]
+
             user_list.append(new_user)
 
         return user_list
