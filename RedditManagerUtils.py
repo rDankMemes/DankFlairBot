@@ -494,7 +494,7 @@ class RedditManager():
         DatabaseManager.update_flairs(flair_struct_list)
 
     @staticmethod
-    def send_message(subject: str, content: str, recipient: str, speaking_as: str = None) -> object:
+    def send_message(subject: str, content: str, recipient: str, speaking_as: str = None):
 
         r = RedditManager.get_connection(head=True)
 
