@@ -469,6 +469,9 @@ class DatabaseManager():
 
             new_user = user(username=username, subreddit=subreddit)
 
+            if not new_user.fetch():
+                return # This user doesn't actually exist on Reddit.
+
             DatabaseManager.updateUser(new_user)
 
     @staticmethod
