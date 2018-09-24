@@ -33,43 +33,11 @@ def read_setting_from_file(filename):
 
     print(output)
 
-threads_stopped = False
-
-# All of the monitor threads. 
-
-mod_monitor = None
-rule_maint  = None
-hot_monitor = None
-user_stream = None
-user_maint  = None
-post_stream = None
-comment_stream = None
-flair_maint = None
-ban_maint = None
-message_monitor = None
-display_manager = None
-
-post_comment_maint = None
-
-kill_lock = threading.Lock()
 
 def setup_threads(subreddit):
 
     global active_comment_duration
     global active_post_duration
-
-    global mod_monitor 
-    global rule_maint  
-    global hot_monitor 
-    global user_stream 
-    global user_maint  
-    global post_stream 
-    global comment_stream 
-    global flair_maint 
-    global ban_maint 
-    global message_monitor 
-    global display_manager 
-    global post_comment_maint
 
     mod_monitor = ModeratorsMonitorThread(subreddit)
 
@@ -125,72 +93,9 @@ def setup_threads(subreddit):
 
     display_manager.start()
 
-    post_comment_maint = PostCommentMaintenanceThread()
+    postcomment_maint = PostCommentMaintenanceThread()
 
-    post_comment_maint.start()
-
-def traceback.print_exc()
- stop_threads():
-
-    global kill_lock
-
-    acq_res = kill_lock.acquire(blocking = False)
-
-    if not acq_res:
-        return
-
-    killing_threads = True
-
-    killer = KillThread()
-
-    killer.start()
-
-class KillThread(threading.Thread):
-
-    def __init__(self):
-        threading.Thread.__init__(self)
-
-        self.name = "Kill Thread"
-
-    def run(self):
-
-        global threads_stopped
-
-        display_manager.join()
-        mod_monitor.join()
-        rule_maint.join()
-        hot_monitor.join() 
-        user_stream.join()
-        user_maint.join()
-        post_stream.join()
-        comment_stream.join()
-        flair_maint.join()
-        ban_maint.join()
-        message_monitor.join()
-        post_comment_maint.join()
-
-        print(threading.enumerate())
-
-        threads_stopped = True
-        
-        return
-
-    def join(self, timeout=None):
-        """
-        Join the thread using underlying threading.Thread join()
-        This method is over-ridden to tell the thread to stop.
-
-        :param timeout: The amount of time to wait for join (Default value = None)
-
-        """
-
-        print("Killing " + self.name)
-
-        # Tell the thread to stop.
-        self.stop = True
-
-        # Pass control to the internal join implementation.
-        super(type(self), self).join(timeout)
+    postcomment_maint.start()
 
 class DisplayManagerThread(threading.Thread):
 
@@ -201,43 +106,17 @@ class DisplayManagerThread(threading.Thread):
 
         self.name = "Display Manager Thread"
 
-        self.stop = False
-
         pass
 
     def run(self):
 
-        try:
+        while True:
 
-            while not self.stop:
+            RedditManager.get_rate_limits()
 
-                RedditManager.get_rate_limits()
+            DisplayManager.update()
 
-                DisplayManager.update()
-
-                time.sleep(0.1)
-
-        except:
-
-            traceback.print_exc()
-            stop_threads()
-
-    def join(self, timeout=None):
-        """
-        Join the thread using underlying threading.Thread join()
-        This method is over-ridden to tell the thread to stop.
-
-        :param timeout: The amount of time to wait for join (Default value = None)
-
-        """
-
-        print("Killing " + self.name) 
-
-        # Tell the thread to stop.
-        self.stop = True
-
-        # Pass control to the internal join implementation.
-        super(type(self), self).join(timeout)
+            time.sleep(0.1)
 
 class MessageMonitorThread(threading.Thread):
 
@@ -246,13 +125,9 @@ class MessageMonitorThread(threading.Thread):
 
         self.name = "Message Monitor Thread"
 
-        self.stop = False
-
-        self.stoppable = False
-
     def run(self):
 
-        while not self.stop:
+        while True:
 
             try:
 
@@ -273,8 +148,7 @@ class MessageMonitorThread(threading.Thread):
                                 RedditManager.accept_mod_invite(message['subreddit'])
 
                             except:
-                                traceback.print_exc()
-                                stop_threads()
+                                pass
 
                         RedditManager.mark_message_read(message['id'])
 
@@ -282,28 +156,9 @@ class MessageMonitorThread(threading.Thread):
 
                         RedditManager.mark_message_read(message['id'])
 
+                pass
             except:
-                traceback.print_exc()
-                stop_threads()
-            
-            self.stoppable = True
-
-    def join(self, timeout=None):
-        """
-        Join the thread using underlying threading.Thread join()
-        This method is over-ridden to tell the thread to stop.
-
-        :param timeout: The amount of time to wait for join (Default value = None)
-
-        """
-
-        print("Killing " + self.name)
-
-        # Tell the thread to stop.
-        self.stop = True
-
-        # Pass control to the internal join implementation.
-        super(type(self), self).join(timeout)                
+                pass
 
 
 class ModeratorsMonitorThread(threading.Thread):
@@ -315,49 +170,21 @@ class ModeratorsMonitorThread(threading.Thread):
 
         self.name = "Moderators Monitor Thread"
 
-        self.stop = False
-
     def run(self):
 
-        loop_pause_time = 60 * 10
+        while True:
 
-        try:
+            userlist = RedditManager.get_subreddit_moderators(self.subreddit)
 
-            while not self.stop:
+            DatabaseManager.update_moderators(userlist, self.subreddit)
 
-                userlist = RedditManager.get_subreddit_moderators(self.subreddit)
+            for mod in userlist:
+                DatabaseManager.ensure_user_exists(mod.username, self.subreddit)
 
-                DatabaseManager.update_moderators(userlist, self.subreddit)
+            DisplayManager.update_num_mods(self.subreddit, len(userlist))
 
-                for mod in userlist:
-                    DatabaseManager.ensure_user_exists(mod.username, self.subreddit)
-
-                DisplayManager.update_num_mods(self.subreddit, len(userlist))
-
-                current_time = time.time()
-
-                while current_time + loop_pause_time > time.time() and not self.stop:
-                    time.sleep(0)
-        except:
-            traceback.print_exc()
-            stop_threads()
-
-    def join(self, timeout=None):
-        """
-        Join the thread using underlying threading.Thread join()
-        This method is over-ridden to tell the thread to stop.
-
-        :param timeout: The amount of time to wait for join (Default value = None)
-
-        """
-
-        print("Killing " + self.name)
-
-        # Tell the thread to stop.
-        self.stop = True
-
-        # Pass control to the internal join implementation.
-        super(type(self), self).join(timeout)
+            #Sleep for 10 minutes
+            time.sleep(10 * 60)
 
 
 class FlairMaintenanceThread(threading.Thread):
@@ -369,48 +196,18 @@ class FlairMaintenanceThread(threading.Thread):
 
         self.name = "Flair Maintenance Thread"
 
-        self.stop = False
-
     def run(self):
 
-        loop_pause_time = 60
+        while True:
 
-        try:
+            flair_list = RedditManager.get_flairs(subreddit=self.subreddit)
 
-            while not self.stop:
+            DisplayManager.update_num_flairs(self.subreddit, len(flair_list))
 
-                flair_list = RedditManager.get_flairs(subreddit=self.subreddit)
+            DatabaseManager.update_flairs(flair_list)
 
-                DisplayManager.update_num_flairs(self.subreddit, len(flair_list))
-
-                DatabaseManager.update_flairs(flair_list)
-
-                current_time = time.time()
-
-                while current_time + loop_pause_time > time.time() and not self.stop:
-                    time.sleep(0)
-
-        except:
-            traceback.print_exc()
-            stop_threads()
-
-    def join(self, timeout=None):
-        """
-        Join the thread using underlying threading.Thread join()
-        This method is over-ridden to tell the thread to stop.
-
-        :param timeout: The amount of time to wait for join (Default value = None)
-
-        """
-
-        print("Killing " + self.name)
-
-        # Tell the thread to stop.
-        self.stop = True
-
-        # Pass control to the internal join implementation.
-        super(type(self), self).join(timeout)
-
+            #Sleep for 1 minute
+            time.sleep(60)
 
 class HotMonitorThread(threading.Thread):
 
@@ -421,63 +218,33 @@ class HotMonitorThread(threading.Thread):
 
         self.name = "Hot Monitor Thread"
 
-        self.stop = False
-
     def run(self):
 
         MINUTE_DELAY = 60
 
-        loop_pause_time = MINUTE_DELAY * 5
+        while True:
 
-        try:
+            # Get the current hot posts from the subreddit.
 
-            while not self.stop:
+            front_posts = RedditManager.getFrontPage(subreddit=self.subreddit)
 
-                # Get the current hot posts from the subreddit.
+            count = 0
 
-                front_posts = RedditManager.getFrontPage(subreddit=self.subreddit)
+            for post in front_posts:
+                count += 1
+                DatabaseManager.update_post_rank(post.post_id, sub_rank=count)
 
-                count = 0
+            # Get the current hot posts from r/all
+            filtered_dict = RedditManager.getFrontPageFiltered(subreddit='all', filtersub=self.subreddit)
 
-                for post in front_posts:
-                    count += 1
-                    DatabaseManager.update_post_rank(post.post_id, sub_rank=count)
+            for rank, ranked_post in filtered_dict.items():
 
-                # Get the current hot posts from r/all
-                filtered_dict = RedditManager.getFrontPageFiltered(subreddit='all', filtersub=self.subreddit)
+                DatabaseManager.update_post_rank(ranked_post.post_id, all_rank=rank)
 
-                for rank, ranked_post in filtered_dict.items():
+                print(rank)
 
-                    DatabaseManager.update_post_rank(ranked_post.post_id, all_rank=rank)
-
-                    print(rank)
-
-                current_time = time.time()
-
-                while current_time + loop_pause_time > time.time() and not self.stop:
-                    time.sleep(0)
-
-        except:
-            traceback.print_exc()
-            stop_threads()
-
-
-    def join(self, timeout=None):
-        """
-        Join the thread using underlying threading.Thread join()
-        This method is over-ridden to tell the thread to stop.
-
-        :param timeout: The amount of time to wait for join (Default value = None)
-
-        """
-
-        print("Killing " + self.name)
-
-        # Tell the thread to stop.
-        self.stop = True
-
-        # Pass control to the internal join implementation.
-        super(type(self), self).join(timeout)    
+            #Sleep for 5 minutes before checking again.
+            time.sleep(MINUTE_DELAY * 5)
 
 class RuleMaintenanceThread(threading.Thread):
 
@@ -495,15 +262,11 @@ class RuleMaintenanceThread(threading.Thread):
 
         self.name = "Rule Maintenance Thread"
 
-        self.stop = False
-
     def run(self):
 
         rule_page = RuleMaintenanceThread.rule_page
 
-        loop_pause_time = 500
-
-        while not self.stop:
+        while True:
 
             try:
                 RulesManager.RulesManager.fetch_ruleset(subreddit=self.subreddit, page=rule_page)
@@ -524,32 +287,7 @@ class RuleMaintenanceThread(threading.Thread):
 
             except prawcore.exceptions.Forbidden as e:
                 DisplayManager.displayStatusString("Need to be mod!")
-
-                current_time = time.time()
-
-                while current_time + loop_pause_time > time.time() and not self.stop:
-                    time.sleep(0)
-
-            except:
-                traceback.print_exc()
-                stop_threads()
-
-    def join(self, timeout=None):
-        """
-        Join the thread using underlying threading.Thread join()
-        This method is over-ridden to tell the thread to stop.
-
-        :param timeout: The amount of time to wait for join (Default value = None)
-
-        """
-
-        print("Killing " + self.name)
-
-        # Tell the thread to stop.
-        self.stop = True
-
-        # Pass control to the internal join implementation.
-        super(type(self), self).join(timeout)
+                time.sleep(500)
 
 class UserStreamThread(threading.Thread):
 
@@ -558,13 +296,11 @@ class UserStreamThread(threading.Thread):
 
         self.name = "User Stream Thread"
 
-        self.stop = False
-
     def run(self):
 
         #print("User Stream Thread Started")
 
-        while not self.stop:
+        while True:
 
             try:
 
@@ -585,30 +321,8 @@ class UserStreamThread(threading.Thread):
 
             except:
 
-                DisplayManager.displayStatusString("User Stream Thread Exception: " + str(sys.exc_info()))
-
-                
-
-                traceback.print_exc()
-                stop_threads()
-
-
-    def join(self, timeout=None):
-        """
-        Join the thread using underlying threading.Thread join()
-        This method is over-ridden to tell the thread to stop.
-
-        :param timeout: The amount of time to wait for join (Default value = None)
-
-        """
-
-        print("Killing " + self.name)
-
-        # Tell the thread to stop.
-        self.stop = True
-
-        # Pass control to the internal join implementation.
-        super(type(self), self).join(timeout)
+                DisplayManager.displayStatusString("User Stream Thread Exception: " + str(sys.exc_info()[0]))
+                pass
 
 class UserMaintenanceThread(threading.Thread):
 
@@ -617,15 +331,11 @@ class UserMaintenanceThread(threading.Thread):
 
         self.name = "User Maintenance Thread"
 
-        self.stop = False
-
     def run(self):
 
         #print("User Maintenance Thread Started")
 
-        loop_pause_time = 10
-
-        while not self.stop:
+        while True:
 
             try:
 
@@ -640,34 +350,11 @@ class UserMaintenanceThread(threading.Thread):
 
                 DatabaseManager.updateUserList(user_list)
 
-                current_time = time.time()
-
-                while current_time + loop_pause_time > time.time() and not self.stop:
-                    time.sleep(0)
-
             except:
 
                 DisplayManager.displayStatusString("User Maintenance Thread Exception: " + str(sys.exc_info()[0]))
 
-                traceback.print_exc()
-                stop_threads()
-
-    def join(self, timeout=None):
-        """
-        Join the thread using underlying threading.Thread join()
-        This method is over-ridden to tell the thread to stop.
-
-        :param timeout: The amount of time to wait for join (Default value = None)
-
-        """
-
-        print("Killing " + self.name)
-
-        # Tell the thread to stop.
-        self.stop = True
-
-        # Pass control to the internal join implementation.
-        super(type(self), self).join(timeout)
+                pass
 
 class PostStreamThread(threading.Thread):
 
@@ -678,51 +365,24 @@ class PostStreamThread(threading.Thread):
 
         self.name = "Post Stream Thread"
 
-        self.stop = False
-
     def run(self):
 
-        loop_pause_time = 10
-
         #("Post Stream Thread Started")
-        try:
 
-            if self.sub is None:
-                return
+        if self.sub is None:
+            return
 
-            while not self.stop:
-                metaList = RedditManager.fetchPostMetaRecent(self.sub)
+        while True:
+            metaList = RedditManager.fetchPostMetaRecent(self.sub)
 
-                DatabaseManager.updatePostList(metaList)
+            DatabaseManager.updatePostList(metaList)
 
-                for post_meta in metaList:
-                    DatabaseManager.ensure_user_exists(post_meta.username, post_meta.subreddit)
+            for post_meta in metaList:
+                DatabaseManager.ensure_user_exists(post_meta.username, post_meta.subreddit)
 
-                current_time = time.time()
+            time.sleep(10)
 
-                while current_time + loop_pause_time > time.time() and not self.stop:
-                    time.sleep(0)
-
-        except:
-            traceback.print_exc()
-            stop_threads()
-
-    def join(self, timeout=None):
-        """
-        Join the thread using underlying threading.Thread join()
-        This method is over-ridden to tell the thread to stop.
-
-        :param timeout: The amount of time to wait for join (Default value = None)
-
-        """
-
-        print("Killing " + self.name)
-
-        # Tell the thread to stop.
-        self.stop = True
-
-        # Pass control to the internal join implementation.
-        super(type(self), self).join(timeout)
+            pass
 
 class CommentStreamThread(threading.Thread):
 
@@ -733,58 +393,28 @@ class CommentStreamThread(threading.Thread):
 
         self.name = "Comment Stream Thread"
 
-        self.stop = False
-
     def run(self):
 
         #DisplayManager.displayStatusString("Comment Stream Thread Started")
 
-        loop_pause_time = 10
+        if self.sub is None:
+            return
 
-        try:
+        while True:
+            metaList = RedditManager.fetchCommentMetaRecent(self.sub)
 
-            if self.sub is None:
-                return
+            DatabaseManager.updateCommentList(metaList)
 
-            while not self.stop:
-                metaList = RedditManager.fetchCommentMetaRecent(self.sub)
+            for post_meta in metaList:
+                DatabaseManager.ensure_user_exists(post_meta.username, post_meta.subreddit)
 
-                DatabaseManager.updateCommentList(metaList)
+            num_users = DatabaseManager.get_count_all_users(self.sub)
 
-                for post_meta in metaList:
-                    DatabaseManager.ensure_user_exists(post_meta.username, post_meta.subreddit)
+            DisplayManager.update_num_users(self.sub, num_users)
 
-                num_users = DatabaseManager.get_count_all_users(self.sub)
+            time.sleep(10)
 
-                DisplayManager.update_num_users(self.sub, num_users)
-
-                current_time = time.time()
-
-                while current_time + loop_pause_time > time.time() and not self.stop:
-                    time.sleep(0)
-
-                pass
-
-        except:
-            traceback.print_exc()
-            stop_threads()
-
-    def join(self, timeout=None):
-        """
-        Join the thread using underlying threading.Thread join()
-        This method is over-ridden to tell the thread to stop.
-
-        :param timeout: The amount of time to wait for join (Default value = None)
-
-        """
-
-        print("Killing " + self.name)
-
-        # Tell the thread to stop.
-        self.stop = True
-
-        # Pass control to the internal join implementation.
-        super(type(self), self).join(timeout)
+            pass
 
 class PostMaintenanceThread(threading.Thread):
 
@@ -799,7 +429,7 @@ class PostMaintenanceThread(threading.Thread):
 
         DAY_HALF_SECONDS = 60 * 60 * 24 * 1.5
 
-        while not self.stop:
+        while True:
 
             try:
 
@@ -841,27 +471,7 @@ class PostMaintenanceThread(threading.Thread):
 
                 DisplayManager.displayStatusString("Post Main Thread Exception: " + str(sys.exc_info()[0]))
 
-                traceback.print_exc()
-                stop_threads()
-
                 pass
-
-    def join(self, timeout=None):
-        """
-        Join the thread using underlying threading.Thread join()
-        This method is over-ridden to tell the thread to stop.
-
-        :param timeout: The amount of time to wait for join (Default value = None)
-
-        """
-
-        print("Killing " + self.name)
-
-        # Tell the thread to stop.
-        self.stop = True
-
-        # Pass control to the internal join implementation.
-        super(type(self), self).join(timeout)
 
 class CommentMaintenanceThread(threading.Thread):
 
@@ -876,7 +486,7 @@ class CommentMaintenanceThread(threading.Thread):
 
         DAY_HALF_SECONDS = 60 * 60 * 24 * 1.5
 
-        while not self.stop:
+        while True:
 
             try:
 
@@ -914,28 +524,9 @@ class CommentMaintenanceThread(threading.Thread):
 
             except:
 
-                DisplayManager.displayStatusString("Comment Main Thread Exception: " + str(sys.exc_info()))
-                
-                traceback.print_exc()
-                stop_threads()
+                DisplayManager.displayStatusString("Comment Main Thread Exception: " + str(sys.exc_info()[0]))
+
                 pass
-
-    def join(self, timeout=None):
-        """
-        Join the thread using underlying threading.Thread join()
-        This method is over-ridden to tell the thread to stop.
-
-        :param timeout: The amount of time to wait for join (Default value = None)
-
-        """
-
-        print("Killing " + self.name)
-
-        # Tell the thread to stop.
-        self.stop = True
-
-        # Pass control to the internal join implementation.
-        super(type(self), self).join(timeout)
 
 class PostCommentMaintenanceThread(threading.Thread):
 
@@ -944,8 +535,6 @@ class PostCommentMaintenanceThread(threading.Thread):
 
         self.name = "Post/Comment Maintenance Thread"
 
-        self.stop = False
-
     def run(self):
 
         global active_comment_duration
@@ -953,9 +542,9 @@ class PostCommentMaintenanceThread(threading.Thread):
 
         #print("Comment Maintenance Thread Started")
 
-        DAY_HALF_SECONDS = 60 * 60 * 24 * 1.5        
+        DAY_HALF_SECONDS = 60 * 60 * 24 * 1.5
 
-        while not self.stop:
+        while True:
 
             try:
 
@@ -1063,27 +652,9 @@ class PostCommentMaintenanceThread(threading.Thread):
             except:
 
                 DisplayManager.displayStatusString("Comment Main Thread Exception: " + str(sys.exc_info()[0]))
-                
-                traceback.print_exc()
-                stop_threads()
+
                 pass
 
-    def join(self, timeout=None):
-        """
-        Join the thread using underlying threading.Thread join()
-        This method is over-ridden to tell the thread to stop.
-
-        :param timeout: The amount of time to wait for join (Default value = None)
-
-        """
-
-        print("Killing " + self.name)
-
-        # Tell the thread to stop.
-        self.stop = True
-
-        # Pass control to the internal join implementation.
-        super(type(self), self).join(timeout)
 
 class BanMaintenanceThread(threading.Thread):
 
@@ -1095,46 +666,13 @@ class BanMaintenanceThread(threading.Thread):
 
         self.name = "Ban Maintenance Thread"
 
-        self.stop = False
-
     def run(self):
         #TODO: change this by looking at changes in the modlog, and updating accordingly.
         #Currently, this simply pulls the entire mod list and updates it every 10 minutes.
 
-        loop_pause_time = 10 * 60
+        ban_list = RedditManager.get_bans(subreddit=self.subreddit)
 
-        try:
+        DatabaseManager.update_bans(ban_list=ban_list, subreddit=self.subreddit)
 
-            while not self.stop:
-
-                ban_list = RedditManager.get_bans(subreddit=self.subreddit)
-
-                DatabaseManager.update_bans(ban_list=ban_list, subreddit=self.subreddit)
-
-                current_time = time.time()
-
-                while current_time + loop_pause_time > time.time() and not self.stop:
-                    time.sleep(0)
-
-        except:
-
-            traceback.print_exc()
-            stop_threads()
-
-
-    def join(self, timeout=None):
-        """
-        Join the thread using underlying threading.Thread join()
-        This method is over-ridden to tell the thread to stop.
-
-        :param timeout: The amount of time to wait for join (Default value = None)
-
-        """
-
-        print("Killing " + self.name)
-
-        # Tell the thread to stop.
-        self.stop = True
-
-        # Pass control to the internal join implementation.
-        super(type(self), self).join(timeout)            
+        # Sleep for 10 minutes
+        time.sleep(10 * 60)
