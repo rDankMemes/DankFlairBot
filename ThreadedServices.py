@@ -643,6 +643,7 @@ class UserMaintenanceThread(threading.Thread):
             if cur_user.last_update == -1:
                 print("User {} doesn't exist. Removing...".format(cur_user.username))
                 DatabaseManager.remove_user(cur_user.username, cur_user.subreddit)
+                user_list.remove(cur_user)
 
         while not self.stop:
 
