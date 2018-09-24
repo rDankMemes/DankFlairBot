@@ -31,7 +31,7 @@ def read_setting_from_file(filename):
 
     active_comment_duration = output[0]["active_comment_duration"]
 
-    print(output)
+    print(output
 
 
 def setup_threads(subreddit):
