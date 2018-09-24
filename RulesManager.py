@@ -123,6 +123,8 @@ class RulesManager():
 
         RulesManager.__current_eval_count += 1
 
+        print(RulesManager.__current_eval_count)
+
         if RulesManager.__current_eval_count % 100 == 0:
             RulesManager.commit_pending_batch_commands()
 
