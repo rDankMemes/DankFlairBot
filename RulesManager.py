@@ -114,17 +114,17 @@ class RulesManager():
 
         active_rulesets = None
 
-        if subreddit in RulesManager.__subreddit_rulesets:
-            active_rulesets = RulesManager.__subreddit_rulesets[subreddit]
-        else:
-            return
-
         RulesManager.__current_eval_count += 1
 
         print(RulesManager.__current_eval_count)
 
         if RulesManager.__current_eval_count % 100 == 0:
             RulesManager.commit_pending_batch_commands()
+
+        if subreddit in RulesManager.__subreddit_rulesets:
+            active_rulesets = RulesManager.__subreddit_rulesets[subreddit]
+        else:
+            return
 
         active_rulesets.evaluate_and_action(eval_post=eval_post, eval_user=eval_user)
 
