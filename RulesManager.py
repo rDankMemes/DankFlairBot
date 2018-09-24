@@ -119,14 +119,14 @@ class RulesManager():
         else:
             return
 
-        active_rulesets.evaluate_and_action(eval_post=eval_post, eval_user=eval_user)
-
         RulesManager.__current_eval_count += 1
 
         print(RulesManager.__current_eval_count)
 
         if RulesManager.__current_eval_count % 100 == 0:
             RulesManager.commit_pending_batch_commands()
+
+        active_rulesets.evaluate_and_action(eval_post=eval_post, eval_user=eval_user)
 
         # for ruleset in active_rulesets:
         #     if ruleset.type == 'submission' and ruleset.evaluate(eval_post=eval_post) and eval_post is not None:
