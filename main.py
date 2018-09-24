@@ -3,7 +3,6 @@ import sqlite3
 
 
 import time
-import threading
 import ThreadedServices
 from DatabaseManager import DatabaseManager
 from RedditManagerUtils import RedditManager
@@ -57,14 +56,8 @@ def main():
 
 #    ThreadedServices.setup_threads("OnionHate")
 
-    time.sleep(10)
-
-    while not ThreadedServices.threads_stopped:
+    while True:
         time.sleep(0)
-
-    print(threading.enumerate())
-
-    print("Dead.")
 
 
 if __name__ == "__main__":

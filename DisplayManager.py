@@ -73,77 +73,74 @@ class DisplayManager():
     def displayStatusString(status_string):
         DisplayManager.status_string = status_string
 
-        print(status_string)
 
     @staticmethod
     def update():
 
-        pass
+        if DisplayManager.update_locked > 0:
+            return
 
-        # if DisplayManager.update_locked > 0:
-        #     return
+        DisplayManager.cls()
 
-        # DisplayManager.cls()
+        sys.stdout.write(Constants.BOT_NAME + "_____\n\n")
 
-        # sys.stdout.write(Constants.BOT_NAME + "_____\n\n")
+        num_cur_comment = DisplayManager.num_cur_comment
+        num_active_comments = DisplayManager.num_active_comments
 
-        # num_cur_comment = DisplayManager.num_cur_comment
-        # num_active_comments = DisplayManager.num_active_comments
+        num_cur_post = DisplayManager.num_cur_post
+        num_active_posts = DisplayManager.num_active_posts
 
-        # num_cur_post = DisplayManager.num_cur_post
-        # num_active_posts = DisplayManager.num_active_posts
+        if num_active_comments != 0:
+            comment_percent = num_cur_comment / num_active_comments
+        else:
+            comment_percent = 0
 
-        # if num_active_comments != 0:
-        #     comment_percent = num_cur_comment / num_active_comments
-        # else:
-        #     comment_percent = 0
+        if num_active_posts != 0:
+            post_percent = num_cur_post / num_active_posts
+        else:
+            post_percent = 0
 
-        # if num_active_posts != 0:
-        #     post_percent = num_cur_post / num_active_posts
-        # else:
-        #     post_percent = 0
+        comment_string = "\rUpdating {num_comments} Comments: ".format(num_comments=num_active_comments)
 
-        # comment_string = "\rUpdating {num_comments} Comments: ".format(num_comments=num_active_comments)
+        formatted_comment_string = '{message: <26}'.format(message=comment_string)
 
-        # formatted_comment_string = '{message: <26}'.format(message=comment_string)
+        formatted_comment_percentage = '{message: <8}'.format(message="{percent}%".format(percent=round(comment_percent * 100, 1)))
 
-        # formatted_comment_percentage = '{message: <8}'.format(message="{percent}%".format(percent=round(comment_percent * 100, 1)))
+        sys.stdout.write(formatted_comment_string + formatted_comment_percentage)
 
-        # sys.stdout.write(formatted_comment_string + formatted_comment_percentage)
+        # We now need to print dashes and spaces for the first progress bar.
+        DisplayManager.progress(1, 20, comment_percent)
 
-        # # We now need to print dashes and spaces for the first progress bar.
-        # DisplayManager.progress(1, 20, comment_percent)
+        sys.stdout.write("\n")
 
-        # sys.stdout.write("\n")
+        post_string = "\rUpdating {num_posts} Posts: ".format(num_posts=num_active_posts)
 
-        # post_string = "\rUpdating {num_posts} Posts: ".format(num_posts=num_active_posts)
+        formatted_post_string = '{message: <26}'.format(message=post_string)
 
-        # formatted_post_string = '{message: <26}'.format(message=post_string)
+        formatted_post_percentage = '{message: <8}'.format(message="{percent}%".format(percent=round(post_percent * 100, 1)))
 
-        # formatted_post_percentage = '{message: <8}'.format(message="{percent}%".format(percent=round(post_percent * 100, 1)))
+        sys.stdout.write(formatted_post_string + formatted_post_percentage)
 
-        # sys.stdout.write(formatted_post_string + formatted_post_percentage)
+        # We now need to print dashes and spaces for the first progress bar.
+        DisplayManager.progress(1, 20, post_percent)
 
-        # # We now need to print dashes and spaces for the first progress bar.
-        # DisplayManager.progress(1, 20, post_percent)
-
-        # sys.stdout.write("\n---\n")
+        sys.stdout.write("\n---\n")
 
 
-        # for sub_name, sub in DisplayManager.subredditDict.items():
+        for sub_name, sub in DisplayManager.subredditDict.items():
 
-        #     sys.stdout.write("Subreddit: r/{subname}\n"
-        #                      .format(subname=sub_name))
+            sys.stdout.write("Subreddit: r/{subname}\n"
+                             .format(subname=sub_name))
 
-        #     sys.stdout.write("\rCurrent Moderator Count: {mod_count}\n".format(mod_count=sub["num_moderators"]))
-        #     sys.stdout.write("\rCurrent User Count: {user_count}\n".format(user_count=sub["num_users"]))
-        #     sys.stdout.write("\rCurrent Flair Count: {flair_count}\n".format(flair_count=sub["num_flairs"]))
+            sys.stdout.write("\rCurrent Moderator Count: {mod_count}\n".format(mod_count=sub["num_moderators"]))
+            sys.stdout.write("\rCurrent User Count: {user_count}\n".format(user_count=sub["num_users"]))
+            sys.stdout.write("\rCurrent Flair Count: {flair_count}\n".format(flair_count=sub["num_flairs"]))
 
-        #     sys.stdout.write("\r---\n")
+            sys.stdout.write("\r---\n")
 
-        # sys.stdout.write("\rStatus:\n\r {status_string}\n".format(status_string=DisplayManager.status_string))
+        sys.stdout.write("\rStatus:\n\r {status_string}\n".format(status_string=DisplayManager.status_string))
 
-        # sys.stdout.flush()
+        sys.stdout.flush()
 
     @staticmethod
     def progress(max_val, width, cur_val):
